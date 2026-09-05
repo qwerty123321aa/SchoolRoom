@@ -1,0 +1,4 @@
+ALTER TABLE "projects" ADD CONSTRAINT "projects_price_minor_nonnegative" CHECK ("projects"."price_minor" >= 0);--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_purchase_count_nonnegative" CHECK ("projects"."purchase_count" >= 0);--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_currency_rub" CHECK ("projects"."currency" = 'RUB');--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_subject_supported" CHECK ("projects"."subject" in ('История', 'Биология', 'География', 'Обществознание', 'Литература', 'Английский язык', 'Информатика', 'Другое'));

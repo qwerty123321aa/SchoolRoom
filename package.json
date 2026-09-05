@@ -1,0 +1,24 @@
+{
+  "name": "schoolroom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SchoolRoom Telegram Mini App, API and administration workspace",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @schoolroom/contracts build && pnpm --parallel --filter @schoolroom/contracts --filter @schoolroom/api --filter @schoolroom/web --filter @schoolroom/admin dev",
+    "dev:api": "pnpm --filter @schoolroom/contracts build && pnpm --filter @schoolroom/api dev",
+    "dev:web": "pnpm --filter @schoolroom/contracts build && pnpm --filter @schoolroom/web dev",
+    "dev:admin": "pnpm --filter @schoolroom/contracts build && pnpm --filter @schoolroom/admin dev",
+    "build": "pnpm --filter @schoolroom/contracts build && pnpm --parallel --filter @schoolroom/api --filter @schoolroom/web --filter @schoolroom/admin build",
+    "typecheck": "pnpm --filter @schoolroom/contracts build && pnpm -r typecheck",
+    "test": "pnpm --filter @schoolroom/contracts build && pnpm -r test",
+    "smoke": "node scripts/smoke-api.mjs",
+    "db:generate": "pnpm --filter @schoolroom/api db:generate",
+    "db:migrate": "pnpm --filter @schoolroom/api db:migrate",
+    "db:seed": "pnpm --filter @schoolroom/api db:seed",
+    "db:studio": "pnpm --filter @schoolroom/api db:studio"
+  }
+}

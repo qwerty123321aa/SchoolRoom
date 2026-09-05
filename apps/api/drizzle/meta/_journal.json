@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788603899486,
+      "tag": "0000_amazing_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788604119244,
+      "tag": "0001_harsh_lilandra",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788605780294,
+      "tag": "0002_handy_mariko_yashida",
+      "breakpoints": true
+    }
+  ]
+}
