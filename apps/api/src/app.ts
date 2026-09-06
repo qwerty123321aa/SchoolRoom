@@ -11,6 +11,7 @@ import type {
 } from './modules/catalog/catalog.repository.js';
 import type { TelegramInitDataVerifier } from './modules/auth/telegram-init-data.js';
 import type { UserRepository } from './modules/auth/auth.repository.js';
+import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import {
   AuthenticationRequiredError,
   RequestAuthenticator,
@@ -80,6 +81,8 @@ export async function createApp(options: CreateAppOptions) {
       return reply.status(503).send({ status: 'unavailable' });
     }
   });
+
+  await registerAuthRoutes(app, (request) => authenticator.authenticate(request));
 
   await registerCatalogRoutes(app, {
     service: new CatalogService(options.catalogRepository),

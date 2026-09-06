@@ -50,7 +50,8 @@ export class RequestAuthenticator {
     if (
       this.options.developmentAuthEnabled &&
       typeof developmentUserId === 'string' &&
-      /^\d{1,16}$/.test(developmentUserId)
+      /^[1-9]\d{0,15}$/.test(developmentUserId) &&
+      BigInt(developmentUserId) <= BigInt(Number.MAX_SAFE_INTEGER)
     ) {
       const identity: TelegramIdentity = {
         telegramId: BigInt(developmentUserId),

@@ -7,7 +7,7 @@ SchoolRoom is a Telegram-first service for ready-made school projects and custom
 - `apps/web` — mobile-first Telegram Mini App client.
 - `apps/api` — standalone Fastify API with modular business logic.
 - `apps/admin` — private project catalog management interface.
-- `apps/bot` — reserved Telegram bot boundary for the notifications stage.
+- `apps/bot` — opt-in Telegram bot with Mini App launch, user ID, polling and webhook transports.
 - `packages/contracts` — shared request and response schemas.
 - `docs` — architecture and operating notes.
 
@@ -25,6 +25,12 @@ The Mini App is available at `http://localhost:5173`, the administrator catalog 
 ## Quality checks
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before opening a pull request.
+
+## Telegram connection
+
+The bot is disabled by default and starts separately with `pnpm dev:bot`.
+See [Telegram setup](docs/telegram.md) for polling/webhook configuration, server-verified
+user identity, secrets and manual acceptance checks. No real credentials are committed.
 
 ## Security baseline
 
