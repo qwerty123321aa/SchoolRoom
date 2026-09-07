@@ -4,12 +4,15 @@ import { createWebhookServer } from '../src/webhook.js';
 import { readBotEnvironment } from '../src/env.js';
 import { configureBot } from '../src/configure.js';
 import { createTelegramClient, TelegramApiError } from '../src/telegram.js';
+import { createSchoolRoomUserRegistrar, SchoolRoomApiError } from '../src/schoolroom-api.js';
 
 const secret = 'test-only-webhook-secret-0000000000000000';
 const token = '123456:TEST_ONLY_TOKEN_NOT_A_REAL_CREDENTIAL';
 const miniAppUrl = 'https://schoolroom.example/catalog';
 const update: TelegramUpdate = {update_id: 41, message: {
-  chat: {id: 900, type: 'private'}, from: {id: 4503599627370495, is_bot: false}, text: '/id',
+  chat: {id: 900, type: 'private'}, from: {
+    id: 4503599627370495, is_bot: false, first_name: 'Test', last_name: 'User', username: 'schoolroom_user',
+  }, text: '/id',
 }};
 const apps: Awaited<ReturnType<typeof createWebhookServer>>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
@@ -62,8 +65,21 @@ describe('bot commands', () => {
   });
   it('opens the configured Mini App using an inline web_app button', async () => {
     const call = vi.fn().mockResolvedValue(true);
-    await createUpdateHandler({call}, miniAppUrl, 'SchoolRoomBot')({...update, message: {...update.message!, text: '/start@SchoolRoomBot launch'}});
+    const registerUser = vi.fn().mockResolvedValue(undefined);
+    await createUpdateHandler({call}, miniAppUrl, 'SchoolRoomBot', registerUser)({...update, message: {...update.message!, text: '/start@SchoolRoomBot launch'}});
     expect(call.mock.calls[0]?.[1].reply_markup.inline_keyboard[0][0].web_app.url).toBe(miniAppUrl);
+    expect(registerUser).toHaveBeenCalledWith({
+      telegramId: '4503599627370495', username: 'schoolroom_user', name: 'Test User',
+    }, undefined);
+  });
+  it('explains all commands and provides the Mini App button in /help', async () => {
+    const call = vi.fn().mockResolvedValue(true);
+    await createUpdateHandler({call}, miniAppUrl, 'SchoolRoomBot')({...update, message: {...update.message!, text: '/help'}});
+    const payload = call.mock.calls[0]?.[1];
+    expect(payload.text).toContain('/start');
+    expect(payload.text).toContain('/id');
+    expect(payload.text).toContain('/help');
+    expect(payload.reply_markup.inline_keyboard[0][0].web_app.url).toBe(miniAppUrl);
   });
   it('ignores groups, bot senders, other commands and commands for other bots', async () => {
     const call = vi.fn();
@@ -105,6 +121,19 @@ describe('bot configuration', () => {
     await configureBot({call}, 'webhook:delete', env);
     expect(call).toHaveBeenLastCalledWith('deleteWebhook', {drop_pending_updates: false});
   });
+  it('registers all user commands and the configured Mini App menu button', async () => {
+    const call = vi.fn().mockResolvedValue(true);
+    const env = readBotEnvironment(polling);
+    await configureBot({call}, 'menu', env);
+    expect(call).toHaveBeenNthCalledWith(1, 'setMyCommands', {commands: [
+      {command: 'start', description: 'Открыть SchoolRoom'},
+      {command: 'id', description: 'Узнать свой Telegram ID'},
+      {command: 'help', description: 'Помощь по боту'},
+    ]});
+    expect(call).toHaveBeenNthCalledWith(2, 'setChatMenuButton', {menu_button: {
+      type: 'web_app', text: 'SchoolRoom', web_app: {url: miniAppUrl},
+    }});
+  });
   it('rejects unexpected webhook paths, query parameters and ports', () => {
     for (const url of ['https://example.com/wrong', 'https://example.com/telegram/webhook?token=abc', 'https://example.com:4200/telegram/webhook']) {
       expect(() => readBotEnvironment({...polling, TELEGRAM_BOT_MODE: 'webhook', TELEGRAM_WEBHOOK_SECRET: secret, TELEGRAM_WEBHOOK_URL: url})).toThrow();
@@ -127,5 +156,25 @@ describe('Telegram client', () => {
     const client = createTelegramClient(token, transport);
     await expect(client.call('getMe')).rejects.toThrow('Telegram API request failed (0)');
     await expect(client.call('getMe')).rejects.toMatchObject({code: 429, retryAfterSeconds: 12, message: 'Telegram API request failed (429)'});
+  });
+});
+
+describe('SchoolRoom API user registration', () => {
+  it('sends a signed request without transmitting the bot token', async () => {
+    const transport = vi.fn().mockResolvedValue(new Response(null, {status: 204}));
+    const register = createSchoolRoomUserRegistrar('http://127.0.0.1:4100', token, transport, () => 1_780_000_000_000);
+    await register({telegramId: '4503599627370495', username: 'schoolroom_user', name: 'Test User'});
+    const [url, options] = transport.mock.calls[0]!;
+    expect(String(url)).toBe('http://127.0.0.1:4100/internal/v1/telegram/users');
+    expect(options.body).not.toContain(token);
+    expect(JSON.stringify(options.headers)).not.toContain(token);
+    expect(options.headers['X-SchoolRoom-Signature']).toMatch(/^[a-f\d]{64}$/);
+  });
+  it('sanitizes API and network failures', async () => {
+    const failedResponse = vi.fn().mockResolvedValue(new Response('private', {status: 500}));
+    const failedNetwork = vi.fn().mockRejectedValue(new Error(token));
+    const user = {telegramId: '1', username: null, name: 'User'};
+    await expect(createSchoolRoomUserRegistrar('http://127.0.0.1:4100', token, failedResponse)(user)).rejects.toBeInstanceOf(SchoolRoomApiError);
+    await expect(createSchoolRoomUserRegistrar('http://127.0.0.1:4100', token, failedNetwork)(user)).rejects.toThrow('SchoolRoom API user registration failed');
   });
 });

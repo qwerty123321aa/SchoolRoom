@@ -2,6 +2,7 @@ import { loadBotEnvironment } from './env.js';
 import { BotInfoSchema, createTelegramClient, TelegramApiError } from './telegram.js';
 import { createUpdateHandler } from './handler.js';
 import { assertPollingAvailable, runPolling } from './polling.js';
+import { createSchoolRoomUserRegistrar } from './schoolroom-api.js';
 import { createWebhookServer } from './webhook.js';
 
 async function main() {
@@ -17,7 +18,8 @@ async function main() {
   const client = createTelegramClient(env.TELEGRAM_BOT_TOKEN!);
   try {
     const bot = BotInfoSchema.parse(await client.call('getMe', {}, controller.signal));
-    const handle = createUpdateHandler(client, env.TELEGRAM_MINI_APP_URL!, bot.username);
+    const registerUser = createSchoolRoomUserRegistrar(env.SCHOOLROOM_API_URL, env.TELEGRAM_BOT_TOKEN!);
+    const handle = createUpdateHandler(client, env.TELEGRAM_MINI_APP_URL!, bot.username, registerUser);
     if (env.TELEGRAM_BOT_MODE === 'polling') {
       await assertPollingAvailable(client, controller.signal);
       console.info('SchoolRoom bot: long polling started');

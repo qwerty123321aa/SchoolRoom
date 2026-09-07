@@ -12,6 +12,11 @@ import type {
 import type { TelegramInitDataVerifier } from './modules/auth/telegram-init-data.js';
 import type { UserRepository } from './modules/auth/auth.repository.js';
 import { registerAuthRoutes } from './modules/auth/auth.routes.js';
+import { registerBotIdentityRoutes } from './modules/auth/bot-identity.routes.js';
+import {
+  BotIdentityAuthenticationError,
+  type BotIdentityVerifier,
+} from './modules/auth/bot-identity.js';
 import {
   AuthenticationRequiredError,
   RequestAuthenticator,
@@ -39,6 +44,7 @@ export interface CreateAppOptions {
   corsOrigins: string[];
   developmentAuthEnabled: boolean;
   telegramInitDataVerifier?: TelegramInitDataVerifier | undefined;
+  botIdentityVerifier?: BotIdentityVerifier | undefined;
   accessRepository?: ProjectAccessRepository;
   adminCatalogRepository?: AdminCatalogRepository;
   adminTelegramIds?: bigint[];
@@ -83,6 +89,13 @@ export async function createApp(options: CreateAppOptions) {
   });
 
   await registerAuthRoutes(app, (request) => authenticator.authenticate(request));
+
+  if (options.botIdentityVerifier) {
+    await registerBotIdentityRoutes(app, {
+      users: options.userRepository,
+      verify: options.botIdentityVerifier,
+    });
+  }
 
   await registerCatalogRoutes(app, {
     service: new CatalogService(options.catalogRepository),
@@ -183,6 +196,16 @@ export async function createApp(options: CreateAppOptions) {
         error: {
           code: 'AUTH_REQUIRED',
           message: error.message,
+          requestId: request.id,
+        },
+      });
+    }
+
+    if (error instanceof BotIdentityAuthenticationError) {
+      return reply.status(401).send({
+        error: {
+          code: 'BOT_IDENTITY_AUTH_REQUIRED',
+          message: 'Не удалось подтвердить запрос Telegram-бота',
           requestId: request.id,
         },
       });

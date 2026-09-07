@@ -1,10 +1,12 @@
 # SchoolRoom Telegram Bot
 
 Standalone opt-in TypeScript process using the Telegram Bot API over HTTPS.
-No database access and no catalog writes.
+No direct database access and no catalog writes.
 
-- `/start`: opens the existing Mini App through an inline `web_app` button.
+- `/start`: registers the sender through the authenticated SchoolRoom API and opens the
+  existing Mini App through an inline `web_app` button.
 - `/id`: returns the sender's Telegram ID in a private chat.
+- `/help`: explains the available commands and shows the Mini App button.
 - Long polling for development; authenticated webhook for hosted environments.
 - Disabled by default. `pnpm dev` continues to start the existing API and frontends.
 - Explicit configuration commands for status, menu, webhook registration and deletion.

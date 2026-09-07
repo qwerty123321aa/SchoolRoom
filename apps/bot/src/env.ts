@@ -10,11 +10,18 @@ const httpsUrl = z.url().refine((value) => {
   const url = new URL(value);
   return url.protocol === 'https:' && !url.username && !url.password && !url.hash;
 }, 'Use an HTTPS URL without credentials or a fragment');
+const schoolRoomApiUrl = z.url().refine((value) => {
+  const url = new URL(value);
+  const loopback = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname);
+  return (url.protocol === 'https:' || (url.protocol === 'http:' && loopback)) &&
+    !url.username && !url.password && !url.hash && !url.search && url.pathname === '/';
+}, 'Use an HTTPS origin, or a loopback HTTP origin for local development');
 
 const schema = z.object({
   TELEGRAM_BOT_MODE: z.enum(['disabled', 'polling', 'webhook']).default('disabled'),
   TELEGRAM_BOT_TOKEN: optional(z.string().trim().regex(/^\d+:[A-Za-z0-9_-]{20,}$/)),
   TELEGRAM_MINI_APP_URL: optional(httpsUrl),
+  SCHOOLROOM_API_URL: schoolRoomApiUrl.default('http://127.0.0.1:4100'),
   TELEGRAM_WEBHOOK_URL: optional(httpsUrl.refine((value) => {
     const url = new URL(value);
     return url.pathname === '/telegram/webhook' && !url.search &&

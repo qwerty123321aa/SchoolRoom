@@ -6,6 +6,7 @@ import { readEnvironment } from './config/env.js';
 import { createDatabase } from './db/client.js';
 import { DrizzleSchoolRoomRepository } from './modules/catalog/drizzle-catalog.repository.js';
 import { createTelegramInitDataVerifier } from './modules/auth/telegram-init-data.js';
+import { createBotIdentityVerifier } from './modules/auth/bot-identity.js';
 import { DrizzleProjectAccessRepository } from './modules/access/drizzle-access.repository.js';
 import { DrizzleAdminCatalogRepository } from './modules/admin/drizzle-admin-catalog.repository.js';
 
@@ -22,9 +23,13 @@ const telegramInitDataVerifier = environment.TELEGRAM_BOT_TOKEN
       maxAgeSeconds: environment.TELEGRAM_AUTH_MAX_AGE_SECONDS,
     })
   : undefined;
+const botIdentityVerifier = environment.TELEGRAM_BOT_TOKEN
+  ? createBotIdentityVerifier({botToken: environment.TELEGRAM_BOT_TOKEN})
+  : undefined;
 const redactedLogPaths = [
   'req.headers.authorization',
   'req.headers.x-dev-telegram-user-id',
+  'req.headers.x-schoolroom-signature',
 ];
 
 const app = await createApp({
@@ -33,6 +38,7 @@ const app = await createApp({
   corsOrigins: environment.corsOrigins,
   developmentAuthEnabled: environment.DEV_AUTH_ENABLED,
   telegramInitDataVerifier,
+  botIdentityVerifier,
   accessRepository,
   adminCatalogRepository,
   adminTelegramIds: environment.adminTelegramIds,

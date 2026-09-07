@@ -15,6 +15,7 @@ export async function configureBot(client: TelegramClient, command: string, env:
     await client.call('setMyCommands', {commands: [
       {command: 'start', description: 'Открыть SchoolRoom'},
       {command: 'id', description: 'Узнать свой Telegram ID'},
+      {command: 'help', description: 'Помощь по боту'},
     ]});
     await client.call('setChatMenuButton', {menu_button: {type: 'web_app', text: 'SchoolRoom', web_app: {url: env.TELEGRAM_MINI_APP_URL}}});
   } else if (command === 'status') {
